@@ -4,6 +4,7 @@ import static spark.Spark.get;
 import static spark.Spark.port;
 import static spark.Spark.staticFiles;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -17,6 +18,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.ibatis.session.SqlSession;
+import org.apache.log4j.Logger;
 
 import com.alibaba.fastjson.JSON;
 
@@ -29,13 +31,7 @@ public class TaskDistributor {
 	private Map<String, DelayTask> workersTask = new HashMap<String, DelayTask>();
 	private DelayQueue<DelayTask> queue = new DelayQueue<>();
 	private Map<Integer, TemplateInfo> templates = new HashMap<>();
-
 	private SqlSession sqlSession;
-	private MysqlApproaches approaches;
-	{
-		sqlSession = ModelManager.me().getFactory().openSession();
-		approaches = sqlSession.getMapper(MysqlApproaches.class);
-	}
 
 	public static void main(String[] args) {
 
@@ -70,7 +66,7 @@ public class TaskDistributor {
 		get("/status", (request, response) -> {
 			return new ModelAndView(null, "status.ftl");
 		}, new FreeMarkerEngine());
-		
+
 		get("/json/stats.json", (request, response) -> {
 			response.type("application/json");
 			Map<String, Object> model = new HashMap<>();
@@ -101,7 +97,6 @@ public class TaskDistributor {
 			int id = Integer.parseInt(request.params(":id"));
 			return "{\"status\": \"" + me.updateFromMysql(id) + "\"}";
 		});
-
 	}
 
 	public TaskDistributor() {
@@ -114,33 +109,78 @@ public class TaskDistributor {
 		Map<String, Integer> map = new HashMap<>(); // in mysql
 		map.put("id", templateInfo.getId());
 		map.put("status", status);
-		approaches.setStatus(map);
-		sqlSession.commit();
+		try {
+			approach().setStatus(map);
+			sqlSession.commit();
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} finally {
+			sqlSession.close();
+		}
 	}
 
 	private void updateFromMysql() {
-		Iterator<TemplateInfo> iterator = approaches.getAllTemplates().iterator();
-		while (iterator.hasNext()) {
-			TemplateInfo templateInfo = iterator.next();
-			templates.put(templateInfo.getId(), templateInfo);
-			queue.offer(new DelayTask(templateInfo));
+		try {
+			Iterator<TemplateInfo> iterator = approach().getAllTemplates().iterator();
+			while (iterator.hasNext()) {
+				TemplateInfo templateInfo = iterator.next();
+				templates.put(templateInfo.getId(), templateInfo);
+				queue.offer(new DelayTask(templateInfo));
+			}
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} finally {
+			sqlSession.close();
 		}
+	}
+
+	private MysqlApproaches approach() {
+		sqlSession = ModelManager.me().getFactory().openSession();
+		return sqlSession.getMapper(MysqlApproaches.class);
 	}
 
 	private String updateFromMysql(int id) {
 		try {
-			TemplateInfo newStuff = approaches.getTemplate(id);
-			if (templates.containsKey(id))
-				BeanUtils.copyProperties(templates.get(id), newStuff);
-			else {
-				templates.put(id, newStuff);
-				queue.offer(new DelayTask(newStuff));
+			Logger logger = Logger.getLogger(TaskDistributor.class);
+			TemplateInfo stuff = approach().getTemplate(id);
+			logger.info(JSON.toJSONString(stuff));
+			if (stuff == null) {
+				if ((stuff = templates.remove(id)) != null) {
+					Iterator<DelayTask> iterator = queue.iterator();
+					while (iterator.hasNext()) {
+						DelayTask task = iterator.next();
+						if (task.getTemplate() == stuff) {
+							workersTask.remove(DigestUtils.sha1Hex(task.getCrawlerIP()));
+							queue.remove(task);
+							break;
+						}
+					}
+					return "deleted";
+				}
+				return "nothing to do";
 			}
-		} catch (Exception e) {
-			e.printStackTrace();
-			return "failed";
+			if (templates.containsKey(id)) {
+				try {
+					BeanUtils.copyProperties(templates.get(id), stuff);
+				} catch (IllegalAccessException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+					return "failed";
+				} catch (InvocationTargetException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+					return "failed";
+				}
+				return "updated";
+			}
+			templates.put(id, stuff);
+			queue.offer(new DelayTask(stuff));
+			return "added";
+		} finally {
+			sqlSession.close();
 		}
-		return "success";
 	}
 
 	class DelayTask implements Delayed {
@@ -182,18 +222,18 @@ public class TaskDistributor {
 				return templateInfo.getStatus();
 			return unit.convert(plannedTime - System.nanoTime(), TimeUnit.NANOSECONDS);
 		}
-		
+
 		public Map<String, String> getProgress() {
 			Map<String, String> result = new HashMap<>();
-			long seconds = TimeUnit.SECONDS.convert(plannedTime-System.nanoTime(), TimeUnit.NANOSECONDS);
+			long seconds = TimeUnit.SECONDS.convert(plannedTime - System.nanoTime(), TimeUnit.NANOSECONDS);
 			result.put("width", "100%");
-			if (templateInfo.getStatus() > 0) 
-				result.put("html", "Error:"+templateInfo.getStatus());
+			if (templateInfo.getStatus() > 0)
+				result.put("html", "Error:" + templateInfo.getStatus());
 			else if (seconds < 0)
 				result.put("html", "Ready");
 			else {
-				result.put("html", String.format("%02d:%02d", seconds/60, seconds%60));
-				result.put("width", 5*seconds/(INTERVAL*6)+"%");
+				result.put("html", String.format("%02d:%02d", seconds / 60, seconds % 60));
+				result.put("width", 5 * seconds / (INTERVAL * 6) + "%");
 			}
 			return result;
 		}
@@ -201,9 +241,11 @@ public class TaskDistributor {
 		public String getCrawlerIP() {
 			return crawlerIP;
 		}
+
 		public int getCount() {
 			return count;
 		}
+
 		public TemplateInfo getTemplate() {
 			return templateInfo;
 		}

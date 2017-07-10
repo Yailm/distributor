@@ -1,37 +1,13 @@
-var d = 0;
-function timeSince(date) {
-	if(date == 0)
-		return "never.";
-
-	var seconds = Math.floor((new Date() - date) / 1000);
-	var interval = Math.floor(seconds / 31536000);
-
-	if (interval > 1)
-		return interval + " years ago.";
-	interval = Math.floor(seconds / 2592000);
-	if (interval > 1)
-		return interval + " months ago.";
-	interval = Math.floor(seconds / 86400);
-	if (interval > 1)
-		return interval + " days ago.";
-	interval = Math.floor(seconds / 3600);
-	if (interval > 1)
-		return interval + " hours ago.";
-	interval = Math.floor(seconds / 60);
-	if (interval > 1)
-		return interval + " minutes ago.";
-	/*if(Math.floor(seconds) >= 5)
-		return Math.floor(seconds) + " seconds";*/
-	else
-		return "a few seconds ago.";
-}
-
+var tasknum = 0;
 function uptime() {
 	$.getJSON("json/stats.json", function(result) {
 		if(result.reload)
 			setTimeout(function() { location.reload(true) }, 1000);
+		$("#loading-notice").remove();
+		for (var i = result.tasks.length; i < tasknum; i++)
+			$("#tasks tr#r"+i).remove();
+		tasknum = result.tasks.length;
 		for (var i = 0; i < result.tasks.length; i++) {
-			$("#loading-notice").remove();
 			var TableRow = $("#tasks tr#r" + i);
 			var ProcessBarType;
 			if (!TableRow.length) {
@@ -65,13 +41,7 @@ function uptime() {
 			TableRow.children["progress"].children[0].children[0].innerHTML = "<small>"+result.tasks[i].progress.html+"</small>";
 			TableRow.children["crawler"].innerHTML = result.tasks[i].crawler;
 		}
-		d = new Date(result.updated*1000);
 	});
 }
-function updateTime() {
-	$("#updated").html("Last updated: " + timeSince(d));
-}
 uptime();
-updateTime();
 setInterval(uptime, 2000);
-setInterval(updateTime, 500);

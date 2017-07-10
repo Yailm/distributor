@@ -6,8 +6,8 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge" /> 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" /> 
   <meta name="description" content="Distributed Crawler Status" /> 
-  <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.0.3/css/bootstrap.min.css" /> 
-  <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.0.3/css/bootstrap-theme.min.css" /> 
+  <link rel="stylesheet" href="css/bootstrap.min.css" /> 
+  <link rel="stylesheet" href="css/bootstrap-theme.min.css" /> 
   <link rel="stylesheet" href="css/light.css" title="light" /> 
   <style>
 	body {
@@ -52,7 +52,7 @@
       <th id="site" style="text-align: center;">Site</th> 
       <th id="url" style="text-align: center;">Url</th> 
       <th id="count" style="text-align: center;">Count</th> 
-      <th id="progress" style="text-align: center;">Reset Progress</th> 
+      <th id="progress" style="text-align: center;">Reset Remaining</th> 
       <th id="crawler" style="text-align: center;">Crawler IPaddr</th> 
      </tr> 
     </thead> 
@@ -60,13 +60,9 @@
      <!-- Servers here \o/ --> 
     </tbody> 
    </table> 
-   <br /> 
-   <div id="updated">
-    Updating...
-   </div> 
   </div> 
-  <script src="//code.jquery.com/jquery-1.10.2.min.js"></script> 
-  <script src="//netdna.bootstrapcdn.com/bootstrap/3.0.3/js/bootstrap.min.js"></script> 
+  <script src="js/jquery-1.10.2.min.js"></script> 
+  <script src="js/bootstrap.min.js"></script> 
   <script src="js/status.js"></script>   
  </body>
 </html>
