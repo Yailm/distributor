@@ -7,7 +7,7 @@ import org.apache.ibatis.io.Resources;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.apache.ibatis.session.SqlSessionFactoryBuilder;
 
-public class ModelManager {
+class ModelManager {
 
 	private final static ModelManager modelManager ;
 	private final static SqlSessionFactory sqlSessionFactory;
@@ -23,11 +23,11 @@ public class ModelManager {
 		}
 		sqlSessionFactory = new SqlSessionFactoryBuilder().build(reader);
 	}
-	public static ModelManager me() {
+	static ModelManager me() {
 		return modelManager;
 	}
 	
-	public SqlSessionFactory getFactory() {
+	SqlSessionFactory getFactory() {
 		return sqlSessionFactory;
 	}
 }

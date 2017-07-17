@@ -8,7 +8,7 @@
   <meta name="description" content="Distributed Crawler Status" /> 
   <link rel="stylesheet" href="css/bootstrap.min.css" /> 
   <link rel="stylesheet" href="css/bootstrap-theme.min.css" /> 
-  <link rel="stylesheet" href="css/light.css" title="light" /> 
+  <link rel="stylesheet" href="css/light.css" title="light" />
   <style>
 	body {
 		padding-top: 70px;
@@ -21,8 +21,7 @@
    <div class="navbar-inner"> 
     <div class="container"> 
      <div class="navbar-header"> 
-      <button data-target=".navbar-collapse" data-toggle="collapse" class="navbar-toggle" type="button"> <span class="sr-only">Toggle navigation</span> <span class="icon-bar"></span> <span class="icon-bar"></span> <span class="icon-bar"></span> </button> 
-      <a href="#" class="navbar-brand">Distributed Crawler Status</a> 
+      <a href="#" class="navbar-brand">Distributed Crawler Status</a>
      </div> 
     </div> 
    </div> 
@@ -38,7 +37,7 @@
      <div class="progress-bar progress-bar-warning" style="width: 100%;">
       Loading...
      </div> 
-    </div> 
+    </div>
     <div style="text-align: center;">
       If this message doesn't disappear make sure that you have Javascript enabled.
      <br />Otherwise the status server is probably down. 
@@ -57,10 +56,10 @@
      </tr> 
     </thead> 
     <tbody id="tasks"> 
-     <!-- Servers here \o/ --> 
+     <!-- tasks here \o/ -->
     </tbody> 
-   </table> 
-  </div> 
+   </table>
+  </div>
   <script src="js/jquery-1.10.2.min.js"></script> 
   <script src="js/bootstrap.min.js"></script> 
   <script src="js/status.js"></script>   
