@@ -136,29 +136,33 @@ public class TaskDistributor {
 		return sqlSession.getMapper(MysqlApproaches.class);
 	}
 
+	private DelayTask uptoTask(TemplateInfo templateInfo) {
+		for (DelayTask task : queue)
+			if (task.getTemplate() == templateInfo)
+				return task;
+		return null;
+	}
+
 	private String updateFromMysql(int id) {
 		try {
 			TemplateInfo stuff = approach().getTemplate(id);
 			if (stuff == null) {
 				if ((stuff = templates.remove(id)) != null) {
-					for (DelayTask task : queue) {
-						if (task.getTemplate() == stuff) {
-							workersTask.remove(DigestUtils.sha1Hex(task.getCrawlerIP()));
-							queue.remove(task);
-							break;
-						}
-					}
+					DelayTask task = uptoTask(stuff);
+					workersTask.remove(DigestUtils.sha1Hex(task.getCrawlerIP()));
+					queue.remove(task);
 					return "deleted";
 				}
 				return "nothing to do";
-			}
-			if (templates.containsKey(id)) {
+			} else if (templates.containsKey(id)) {
 				try {
 					BeanUtils.copyProperties(templates.get(id), stuff);
 				} catch (IllegalAccessException | InvocationTargetException e) {
 					e.printStackTrace();
 					return "failed";
 				}
+				// 防止拥有旧任务的爬虫提交错误
+				workersTask.remove(DigestUtils.sha1Hex(uptoTask(templates.get(id)).getCrawlerIP()));
 				return "updated";
 			}
 			templates.put(id, stuff);
@@ -198,8 +202,7 @@ public class TaskDistributor {
 			long othersDelay = o.getDelay(TimeUnit.NANOSECONDS);
 			if (othersDelay > getDelay(TimeUnit.NANOSECONDS))
 				return -1;
-			else
-				return 1;
+            return 1;
 		}
 
 		@Override
